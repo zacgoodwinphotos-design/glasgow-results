@@ -3,21 +3,32 @@ import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 
 const port = process.env.PORT || 3000;
-const sourceUrl = 'https://www.tntsports.co.uk/commonwealth-games/2026/score-center.shtml';
-const athletes = ['Shannon McIlroy', 'Gary Kelly'];
+const sourceUrl = 'https://www.tntsports.co.uk/swimming/commonwealth-games-2026-swimming/2026/calendar-results.shtml';
+const athleteGroups = [
+  {
+    name: 'AP Race',
+    athletes: [
+      { name: 'Matthew Richards', aliases: ['Matthew Richards'] },
+      { name: 'Adam Ramsay-Peaty', aliases: ['Adam Ramsay-Peaty', 'Adam Peaty'] },
+      { name: 'Lauren Cox', aliases: ['Lauren Cox'] },
+      { name: 'Luke Greenbank', aliases: ['Luke Greenbank'] },
+      { name: 'Filip Nowacki', aliases: ['Filip Nowacki'] }
+    ]
+  },
+  {
+    name: 'Sprint With The Stars',
+    athletes: [
+      { name: 'Noe Ponti', aliases: ['Noe Ponti'] },
+      { name: 'Abbie Wood', aliases: ['Abbie Wood'] },
+      { name: 'Ollie Morgan', aliases: ['Ollie Morgan', 'Oliver Morgan'] },
+      { name: 'Angharad Evans', aliases: ['Angharad Evans'] }
+    ]
+  }
+];
 const mimeTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png' };
 
 function clean(value) {
   return value.replace(/<[^>]*>/g, ' ').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-function parseResult(text, athlete) {
-  const opponentAndScore = text.replace(athlete, '').trim();
-  // TNT currently writes fixtures as "Athlete 2 0 Opponent".
-  const scoreFirst = opponentAndScore.match(/^(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(.*)$/);
-  if (scoreFirst) return { opponent: scoreFirst[3], score: `${scoreFirst[1]} – ${scoreFirst[2]}` };
-  const match = opponentAndScore.match(/^(.*?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)$/);
-  return match ? { opponent: match[1], score: `${match[2]} – ${match[3]}` } : { opponent: opponentAndScore || '—', score: '—' };
 }
 
 async function getResults() {
@@ -25,20 +36,20 @@ async function getResults() {
   if (!response.ok) throw new Error(`TNT Sports returned ${response.status}`);
   const page = await response.text();
 
-  return athletes.flatMap((athlete) => {
-    // Fixtures are linked on the score centre. Limiting parsing to links avoids names from navigation and scripts.
-    const fragment = (page.match(/<a\b[^>]*>[\s\S]*?<\/a>/gi) || []).map(clean)
-      .find((text) => text.includes(athlete) && /\d+(?:\.\d+)?\s+\d+(?:\.\d+)?/.test(text));
-    if (!fragment) return [];
-    const { opponent, score } = parseResult(fragment, athlete);
-    return [{ athlete, opponent, score, event: "Bowls · Men's Singles · Group B" }];
-  });
+  const links = (page.match(/<a\b[^>]*>[\s\S]*?<\/a>/gi) || []).map(clean);
+  return athleteGroups.map((group) => ({
+    name: group.name,
+    athletes: group.athletes.map((athlete) => {
+      const result = links.find((text) => athlete.aliases.some((alias) => text.includes(alias)) && text.length > athlete.aliases[0].length);
+      return { name: athlete.name, result: result || null };
+    })
+  }));
 }
 
 createServer(async (request, response) => {
   if (request.url === '/api/results') {
     try {
-      const body = JSON.stringify({ results: await getResults(), updatedAt: new Date().toISOString(), sourceUrl });
+      const body = JSON.stringify({ groups: await getResults(), updatedAt: new Date().toISOString(), sourceUrl });
       response.writeHead(200, { 'content-type': 'application/json' }).end(body);
     } catch (error) {
       response.writeHead(502, { 'content-type': 'application/json' }).end(JSON.stringify({ error: 'Could not retrieve the latest results.', detail: error.message }));
@@ -51,4 +62,4 @@ createServer(async (request, response) => {
     const file = await readFile(join('public', pathname));
     response.writeHead(200, { 'content-type': mimeTypes[extname(pathname)] || 'application/octet-stream' }).end(file);
   } catch { response.writeHead(404).end('Not found'); }
-}).listen(port, () => console.log(`Results dashboard running at http://localhost:${port}`));
+}).listen(port, '0.0.0.0', () => console.log(`Results dashboard running at http://localhost:${port}`));
