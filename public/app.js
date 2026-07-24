@@ -7,9 +7,17 @@ function escapeHtml(value) {
 }
 
 function card(athlete) {
+  const races = athlete.races?.length
+    ? `<ul class="race-list">${athlete.races.map((race) => `<li>
+      <span class="race-date">${escapeHtml(race.date)} · ${escapeHtml(race.session)}</span>
+      <span class="race-event">${escapeHtml(race.event)} · ${escapeHtml(race.phase)}</span>
+      <strong class="race-time">${race.time ? escapeHtml(race.time) : 'Time awaiting TNT'}</strong>
+      ${race.result ? `<span class="race-result">Result: ${escapeHtml(race.result)}</span>` : ''}
+    </li>`).join('')}</ul>`
+    : '';
   return `<article class="card">
     <h2>${escapeHtml(athlete.name)}</h2>
-    <p class="result-detail">${athlete.result ? escapeHtml(athlete.result) : 'No result listed yet'}</p>
+    ${races || '<p class="result-detail">No scheduled races listed yet</p>'}
   </article>`;
 }
 

@@ -19,6 +19,11 @@ h1 { font-size: clamp(2rem, 8vw, 3.7rem); letter-spacing: -.06em; line-height: .
 .event { color: #9a9068; font-size: .78rem; font-weight: 700; margin: 0 0 8px; }
 h2 { margin: 0; font-size: 1.35rem; letter-spacing: -.025em; }
 .result-detail { color: #aeb8c2; margin: 9px 0 0; line-height: 1.45; }
+.race-list { list-style: none; margin: 16px 0 0; padding: 0; border-top: 1px solid #334151; }
+.race-list li { display: grid; grid-template-columns: 118px 1fr auto; gap: 8px 14px; align-items: center; border-bottom: 1px solid #334151; padding: 10px 0; font-size: .82rem; }
+.race-date { color: #9a9068; font-weight: 700; }.race-event { color: #c9d0d7; }.race-time { color: #fff; white-space: nowrap; font-size: .78rem; }
+.race-result { grid-column: 1 / -1; color: #f4f5f2; font-weight: 650; }
+.group--sprint-with-the-stars .race-date { color: #c2a251; }
 .match { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; color: #aeb8c2; }
 .match strong { color: #ffffff; font-size: 1.45rem; white-space: nowrap; }
 .status { color: #aeb8c2; margin: 8px 0; }.error { color: #ff8585; }
@@ -28,3 +33,4 @@ a { color: #9a9068; font-weight: 650; }
 .group--sprint-with-the-stars .group-title,
 .group--sprint-with-the-stars .event { color: #c2a251; }
 @media (max-width: 480px) { .site-header { margin-bottom: 25px; } .logo { width: 68px; height: 80px; } }
+@media (max-width: 560px) { .race-list li { grid-template-columns: 1fr auto; } .race-event { grid-column: 1 / -1; grid-row: 2; } }
